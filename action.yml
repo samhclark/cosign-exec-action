@@ -1,0 +1,12 @@
+name: 'cosign executable'
+description: 'Wrapper around the cosign executable'
+inputs:
+  args:
+    description: 'Single string args to the `cosign` command'
+    required: true
+    default: 'version'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.args }}
