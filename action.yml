@@ -5,8 +5,11 @@ inputs:
     description: 'Single string args to the `cosign` command'
     required: true
     default: 'version'
+  each:
+    description: |
+      Newline separated parameters where each line is substituted in args, replacing `{}`.
+      That is, `args` MUST contain `{}` if `each` is set. 
+      Practically, this lets you do `xargs -I {} cosign $args`.
 runs:
   using: 'docker'
   image: 'Dockerfile'
-  args:
-    - ${{ inputs.args }}
