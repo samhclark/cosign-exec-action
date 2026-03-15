@@ -14,6 +14,7 @@ LABEL com.github.actions.name="cosign-exec-action" \
     org.opencontainers.image.documentation="https://github.com/samhclark/cosign-exec-action" \
     org.opencontainers.image.description="A simple wrapper around the cosign executable for use as a step in GitHub Actions"
 
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=builder /output/cosign /usr/local/bin/cosign
 COPY --chmod=755 ./entrypoint.sh /entrypoint.sh
 
