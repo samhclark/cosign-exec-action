@@ -31,25 +31,42 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Extract Expected Version
+        id: expected
+        run: |
+          version=$(grep '^tag=' build-cosign.sh | grep -oP 'v\K[\d.]+[-\w.]*')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Expected cosign version: $version"
+
       - name: Build the Container
         run: podman build -t cosign-exec-action:test .
 
       - name: Test - Simple Mode
         run: |
-          podman run --rm \
-            --env INPUT_ARGS=version \
-            cosign-exec-action:test
+          output=$(podman run --rm \
+            --env 'INPUT_ARGS=version --json' \
+            cosign-exec-action:test)
+          echo "$output"
+          echo "$output" | grep -c "\"gitVersion\": \"v${{ steps.expected.outputs.version }}\""
 
       - name: Test - Each Mode
         run: |
-          podman run --rm \
+          output=$(podman run --rm \
             --env INPUT_ARGS="{}" \
-            --env INPUT_EACH=version \
-            cosign-exec-action:test
+            --env 'INPUT_EACH=version --json' \
+            cosign-exec-action:test)
+          echo "$output"
+          echo "$output" | grep -c "\"gitVersion\": \"v${{ steps.expected.outputs.version }}\""
 
       - name: Test - Each Mode Multi-line
         run: |
-          podman run --rm \
+          output=$(podman run --rm \
             --env INPUT_ARGS="{}" \
-            --env "INPUT_EACH=$(printf 'version\nversion')" \
-            cosign-exec-action:test
+            --env "INPUT_EACH=$(printf 'version --json\nversion --json')" \
+            cosign-exec-action:test)
+          echo "$output"
+          count=$(echo "$output" | grep -c "\"gitVersion\": \"v${{ steps.expected.outputs.version }}\"")
+          if [ "$count" -ne 2 ]; then
+            echo "::error::Expected 2 version lines, got $count"
+            exit 1
+          fi
