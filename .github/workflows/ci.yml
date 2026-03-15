@@ -47,7 +47,11 @@ jobs:
             --env 'INPUT_ARGS=version --json' \
             cosign-exec-action:test)
           echo "$output"
-          echo "$output" | grep -c "\"gitVersion\": \"v${{ steps.expected.outputs.version }}\""
+          count=$(echo "$output" | grep -c "\"gitVersion\": \"v${{ steps.expected.outputs.version }}\"")
+          if [ "$count" -ne 1 ]; then
+            echo "::error::Expected 1 version line, got $count"
+            exit 1
+          fi
 
       - name: Test - Each Mode
         run: |
@@ -56,7 +60,11 @@ jobs:
             --env 'INPUT_EACH=version --json' \
             cosign-exec-action:test)
           echo "$output"
-          echo "$output" | grep -c "\"gitVersion\": \"v${{ steps.expected.outputs.version }}\""
+          count=$(echo "$output" | grep -c "\"gitVersion\": \"v${{ steps.expected.outputs.version }}\"")
+          if [ "$count" -ne 1 ]; then
+            echo "::error::Expected 1 version line, got $count"
+            exit 1
+          fi
 
       - name: Test - Each Mode Multi-line
         run: |
