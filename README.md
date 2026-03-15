@@ -50,13 +50,13 @@ Use `each` to call `cosign` once per image, substituting `{}` in `args`:
 ## Local testing
 
 ```bash
-docker build -t cosign-exec-action .
+podman build -t cosign-exec-action .
 
 # Simple mode
-docker run --env INPUT_ARGS=version --rm cosign-exec-action
+podman run --env INPUT_ARGS=version --rm cosign-exec-action
 
 # Each mode
-docker run \
+podman run \
   --env INPUT_ARGS="{}" \
   --env INPUT_EACH=version \
   --rm cosign-exec-action
