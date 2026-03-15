@@ -24,7 +24,7 @@ Key files:
 ## Versioning
 
 - The action version lives in the `image:` line of `action.yml` (e.g., `v1.0.2`)
-- The `version-check.yml` workflow blocks PRs that don't bump the version
+- The `version-check.yml` workflow blocks PRs that don't bump the version — **every PR must bump the image tag in `action.yml`** (except dependabot PRs)
 - The `cd.yml` workflow publishes the container image and creates a GitHub release on merge to `main`
 - Cosign updates bump the patch version; major/minor bumps are manual
 
