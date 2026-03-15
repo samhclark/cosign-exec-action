@@ -17,9 +17,4 @@ LABEL com.github.actions.name="cosign-exec-action" \
 COPY --from=builder /output/cosign /usr/local/bin/cosign
 COPY --chmod=755 ./entrypoint.sh /entrypoint.sh
 
-RUN groupadd --system actiongroup && \
-    useradd --system --gid actiongroup --no-create-home actionuser
-
-USER actionuser
-
 ENTRYPOINT [ "/entrypoint.sh" ]
