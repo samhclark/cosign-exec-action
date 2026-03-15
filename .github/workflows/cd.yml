@@ -8,12 +8,6 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  CONTAINER_REGISTRY: ghcr.io
-  CONTAINER_REGISTRY_USERNAME: ${{ github.actor }}
-  CONTAINER_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-  MANIFEST_PATH: action.yml
-
 permissions:
   contents: write
   packages: write
@@ -30,68 +24,56 @@ jobs:
 
     steps:
       - name: Checkout
-        id: checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-tags: true
           ref: main
 
-      - name: Check Version
+      - name: Extract Version
         id: version
-        uses: issue-ops/semver@e58d2f490332e0310a78e9a0e935d8d6f898e9e3 # v3.0.0
-        with:
-          check-only: true
-          manifest-path: ${{ env.MANIFEST_PATH }}
-          ref: main
-          workspace: ${{ github.workspace }}
+        run: |
+          version=$(grep 'image:' action.yml | grep -oP 'v\K[\d.]+[-\w.]*')
+          if [ -z "$version" ]; then
+            echo "::error::Could not extract version from action.yml"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Extracted version: $version"
 
-      - name: Set Image Tags
-        id: tags
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
-        with:
-          script: |
-            const version = '${{ steps.version.outputs.version }}'
+      - name: Login to Container Registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | \
+            podman login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-            if (version.includes('-')) {
-              core.setOutput('tags', `type=raw,value=v${version}`)
-            } else {
-              let tags = [
-                'type=raw,value=latest',
-                `type=raw,value=v${version}`,
-                `type=raw,value=v${version.split('.').slice(0, 2).join('.')}`,
-                `type=raw,value=v${version.split('.')[0]}`
-              ]
-              core.setOutput('tags', tags.join('\n'))
-            }
+      - name: Build Container Image
+        run: |
+          podman build -t "ghcr.io/${{ github.repository }}:v${{ steps.version.outputs.version }}" .
 
-      - name: Extract Metadata
-        id: meta
-        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
-        with:
-          images: ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}
-          tags: ${{ steps.tags.outputs.tags }}
+      - name: Tag and Push
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          image="ghcr.io/${{ github.repository }}"
+          primary="${image}:v${version}"
 
-      - name: Authenticate to Container Registry
-        id: login
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
-        with:
-          registry: ${{ env.CONTAINER_REGISTRY }}
-          username: ${{ env.CONTAINER_REGISTRY_USERNAME }}
-          password: ${{ env.CONTAINER_REGISTRY_PASSWORD }}
+          tags=("v${version}")
 
-      - name: Publish Container Image
-        id: publish
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
-        env:
-          LABELS: ${{ steps.meta.outputs.labels }}
-          TAGS: ${{ steps.meta.outputs.tags }}
-        with:
-          labels: ${{ env.LABELS }}
-          push: true
-          tags: ${{ env.TAGS }}
+          if [[ "$version" != *-* ]]; then
+            IFS='.' read -r major minor _patch <<< "$version"
+            tags+=("latest")
+            tags+=("v${major}.${minor}")
+            tags+=("v${major}")
+          fi
+
+          for tag in "${tags[@]}"; do
+            podman tag "$primary" "${image}:${tag}"
+          done
+
+          for tag in "${tags[@]}"; do
+            podman push "${image}:${tag}"
+          done
 
       - name: Create Release
-        id: release
-        uses: issue-ops/releaser@41bcc03658669135298bb08b60f043f1e02bf10e # v3.0.0
-        with:
-          tag: v${{ steps.version.outputs.version }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ steps.version.outputs.version }}" --generate-notes
