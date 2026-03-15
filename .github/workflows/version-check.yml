@@ -5,13 +5,8 @@ on:
     branches:
       - main
 
-env:
-  MANIFEST_PATH: action.yml
-
 permissions:
-  checks: write
   contents: read
-  pull-requests: write
 
 jobs:
   check-version:
@@ -22,14 +17,22 @@ jobs:
 
     steps:
       - name: Checkout
-        id: checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-tags: true
 
       - name: Check Version
-        id: check-version
-        uses: issue-ops/semver@e58d2f490332e0310a78e9a0e935d8d6f898e9e3 # v3.0.0
-        with:
-          check-only: true
-          manifest-path: ${{ env.MANIFEST_PATH }}
+        run: |
+          version=$(grep 'image:' action.yml | grep -oP 'v[\d.]+[-\w.]*')
+          if [ -z "$version" ]; then
+            echo "::error::Could not extract version from action.yml"
+            exit 1
+          fi
+          echo "Found version: $version"
+
+          if git tag -l "v$version" | grep -q .; then
+            echo "::error::Tag v$version already exists. Bump the version in action.yml."
+            exit 1
+          fi
+
+          echo "Version v$version is new. Check passed."
