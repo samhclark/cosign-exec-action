@@ -111,13 +111,20 @@ sed -i "s|^FROM docker.io/library/golang:.*|FROM docker.io/library/golang:${go_v
 
 echo "Updated Containerfile Go version: golang:${go_version}@${go_digest}"
 
-# --- Bump patch version in action.yml ---
+# --- Bump action version to match cosign's semver change ---
 
 current_image_tag=$(grep 'image: docker://' "$ACTION_YML" | sed 's/.*:\(v[0-9.]*\)/\1/')
-major=$(echo "$current_image_tag" | cut -d. -f1)
-minor=$(echo "$current_image_tag" | cut -d. -f2)
-patch=$(echo "$current_image_tag" | cut -d. -f3)
-new_image_tag="${major}.${minor}.$((patch + 1))"
+IFS='.' read -r cur_cosign_major cur_cosign_minor _ <<< "${current_tag#v}"
+IFS='.' read -r new_cosign_major new_cosign_minor _ <<< "${latest_tag#v}"
+IFS='.' read -r action_major action_minor action_patch <<< "${current_image_tag#v}"
+
+if [[ "$new_cosign_major" != "$cur_cosign_major" ]]; then
+    new_image_tag="v$((action_major + 1)).0.0"
+elif [[ "$new_cosign_minor" != "$cur_cosign_minor" ]]; then
+    new_image_tag="v${action_major}.$((action_minor + 1)).0"
+else
+    new_image_tag="v${action_major}.${action_minor}.$((action_patch + 1))"
+fi
 
 sed -i "s|${current_image_tag}|${new_image_tag}|" "$ACTION_YML"
 
