@@ -1,5 +1,11 @@
 name: 'cosign executable'
 description: 'Wrapper around the cosign executable'
+author: samhclark
+
+branding:
+  icon: lock
+  color: blue
+
 inputs:
   args:
     description: 'Single string args to the `cosign` command'
@@ -8,8 +14,12 @@ inputs:
   each:
     description: |
       Newline separated parameters where each line is substituted in args, replacing `{}`.
-      That is, `args` MUST contain `{}` if `each` is set. 
+      That is, `args` MUST contain `{}` if `each` is set.
       Practically, this lets you do `xargs -I {} cosign $args`.
+
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: docker
+  image: docker://ghcr.io/samhclark/cosign-exec-action:v1.0.0
+  env:
+    INPUT_ARGS: ${{ inputs.args }}
+    INPUT_EACH: ${{ inputs.each }}
