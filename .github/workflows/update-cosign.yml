@@ -1,0 +1,57 @@
+name: Update cosign
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Check for cosign update
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./scripts/check-cosign-update.sh
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create PR
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          new_tag=$(grep '^tag=' build-cosign.sh | cut -d'"' -f2)
+          branch="update-cosign-${new_tag}"
+
+          git checkout -b "$branch"
+          git add build-cosign.sh action.yml Containerfile README.md
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "Bump cosign to ${new_tag}"
+          git push -u origin "$branch"
+
+          gh pr create \
+            --title "Bump cosign to ${new_tag}" \
+            --body "$(cat <<EOF
+          Automated update to cosign ${new_tag}.
+
+          Release: https://github.com/sigstore/cosign/releases/tag/${new_tag}
+
+          Please verify with \`podman build .\` before merging.
+          EOF
+          )"
