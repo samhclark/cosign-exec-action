@@ -2,6 +2,8 @@
 
 ![CI](https://github.com/samhclark/cosign-exec-action/actions/workflows/ci.yml/badge.svg)
 
+Bundles [cosign v3.0.5](https://github.com/sigstore/cosign/releases/tag/v3.0.5).
+
 A simple wrapper around the `cosign` executable for use as a step in GitHub
 Actions. The container image is prebuilt and pulled from
 [GitHub Container Registry](https://ghcr.io/samhclark/cosign-exec-action)
