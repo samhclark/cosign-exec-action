@@ -11,6 +11,7 @@ on:
 permissions:
   contents: write
   packages: write
+  id-token: write
 
 jobs:
   publish:
@@ -50,6 +51,7 @@ jobs:
           podman build -t "ghcr.io/${{ github.repository }}:v${{ steps.version.outputs.version }}" .
 
       - name: Tag and Push
+        id: push
         run: |
           version="${{ steps.version.outputs.version }}"
           image="ghcr.io/${{ github.repository }}"
@@ -71,6 +73,14 @@ jobs:
           for tag in "${tags[@]}"; do
             podman push "${image}:${tag}"
           done
+
+          digest=$(podman inspect --format '{{.Digest}}' "$primary" | sed 's/sha256://')
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Sign Container Image
+        uses: ./
+        with:
+          args: 'sign ghcr.io/${{ github.repository }}@sha256:${{ steps.push.outputs.digest }} --yes'
 
       - name: Create Release
         env:
