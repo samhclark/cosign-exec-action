@@ -6,13 +6,16 @@ tag="v3.0.5"
 commit="479147a4df05f31be48aeb2b3a9d32dfc35ba877"
 build_date="2026-02-19T18:42:21Z"
 
-declare -A binary_checksums
-binary_checksums['amd64']='db15cc99e6e4837daabab023742aaddc3841ce57f193d11b7c3e06c8003642b2'
-binary_checksums['x64']='db15cc99e6e4837daabab023742aaddc3841ce57f193d11b7c3e06c8003642b2'
-binary_checksums['x86_64']='db15cc99e6e4837daabab023742aaddc3841ce57f193d11b7c3e06c8003642b2'
+amd64_checksum="db15cc99e6e4837daabab023742aaddc3841ce57f193d11b7c3e06c8003642b2"
+arm64_checksum="d098f3168ae4b3aa70b4ca78947329b953272b487727d1722cb3cb098a1a20ab"
 
-binary_checksums['aarch64']='d098f3168ae4b3aa70b4ca78947329b953272b487727d1722cb3cb098a1a20ab'
-binary_checksums['arm64']='d098f3168ae4b3aa70b4ca78947329b953272b487727d1722cb3cb098a1a20ab'
+declare -A binary_checksums
+binary_checksums['amd64']="$amd64_checksum"
+binary_checksums['x64']="$amd64_checksum"
+binary_checksums['x86_64']="$amd64_checksum"
+
+binary_checksums['aarch64']="$arm64_checksum"
+binary_checksums['arm64']="$arm64_checksum"
 
 log_info() {
     1>&2 echo "[INFO]: $*"
