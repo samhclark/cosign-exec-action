@@ -23,7 +23,7 @@ jobs:
 
       - name: Check Version
         run: |
-          version=$(grep 'image:' action.yml | grep -oP 'v[\d.]+[-\w.]*')
+          version=$(grep 'image:' action.yml | grep -oP 'v\K[\d.]+[-\w.]*')
           if [ -z "$version" ]; then
             echo "::error::Could not extract version from action.yml"
             exit 1
