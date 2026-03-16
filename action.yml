@@ -21,7 +21,7 @@ inputs:
     required: false
     default: 'ghcr.io'
   registry-username:
-    description: 'Username for registry authentication. Defaults to the GitHub actor.'
+    description: 'Username for registry authentication. Defaults to the repository owner.'
     required: false
   registry-token:
     description: 'Token for authenticating to the container registry (e.g., secrets.GITHUB_TOKEN). If set, runs `cosign login` before the main command.'
@@ -34,5 +34,5 @@ runs:
     INPUT_ARGS: ${{ inputs.args }}
     INPUT_EACH: ${{ inputs.each }}
     INPUT_REGISTRY: ${{ inputs.registry }}
-    INPUT_REGISTRY_USERNAME: ${{ inputs.registry-username || github.actor }}
+    INPUT_REGISTRY_USERNAME: ${{ inputs.registry-username || github.repository_owner }}
     INPUT_REGISTRY_TOKEN: ${{ inputs.registry-token }}
