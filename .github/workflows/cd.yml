@@ -12,6 +12,7 @@ permissions:
   contents: write
   packages: write
   id-token: write
+  attestations: write
 
 jobs:
   publish:
@@ -83,6 +84,14 @@ jobs:
         with:
           args: 'sign ghcr.io/${{ github.repository }}@sha256:${{ steps.push.outputs.digest }} --yes'
           registry-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Attest Container Image
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: sha256:${{ steps.push.outputs.digest }}
+          push-to-registry: true
+          create-storage-record: false
 
       - name: Create Release
         env:
