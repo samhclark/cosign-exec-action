@@ -70,11 +70,12 @@ jobs:
             podman tag "$primary" "${image}:${tag}"
           done
 
-          for tag in "${tags[@]}"; do
+          podman push --digestfile=/tmp/digest "$primary"
+          for tag in "${tags[@]:1}"; do
             podman push "${image}:${tag}"
           done
 
-          digest=$(podman inspect --format '{{.Digest}}' "$primary" | sed 's/sha256://')
+          digest=$(sed 's/sha256://' /tmp/digest)
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
       - name: Sign Container Image
