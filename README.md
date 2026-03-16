@@ -15,6 +15,9 @@ rather than built on every action run.
 | ----- | -------- | ------- | ----------- |
 | `args` | yes | `version` | Arguments passed to `cosign` |
 | `each` | no | — | Newline-separated list of values. Each line is substituted for `{}` in `args` and `cosign` is called once per line. `args` must contain `{}` when `each` is set. |
+| `registry` | no | `ghcr.io` | Container registry hostname to authenticate to. Required when `registry-token` is set. |
+| `registry-username` | no | `github.repository_owner` | Username for registry authentication. |
+| `registry-token` | no | — | Token for authenticating to the container registry. If set, runs `cosign login` before the main command. |
 
 ## Usage
 
@@ -29,6 +32,19 @@ rather than built on every action run.
       --certificate-identity=https://github.com/org/repo/.github/workflows/release.yml@refs/heads/main
       --certificate-oidc-issuer=https://token.actions.githubusercontent.com
       docker.io/org/image@sha256:<digest>
+```
+
+### Sign an image (keyless)
+
+Sign with Sigstore's keyless flow using GitHub OIDC. Requires `id-token: write`
+and `packages: write` permissions.
+
+```yaml
+- name: Sign image
+  uses: samhclark/cosign-exec-action@v1
+  with:
+    args: 'sign ghcr.io/org/image@sha256:<digest> --yes'
+    registry-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Verify multiple images
@@ -67,8 +83,8 @@ podman run \
 ## Releasing
 
 The [`cd.yml`](./.github/workflows/cd.yml) workflow publishes a new container
-image and creates a GitHub release whenever a pull request is merged into
-`main`. To release a new version, bump the image tag in
+image, signs it with cosign (keyless via Sigstore), and creates a GitHub release
+whenever a pull request is merged into `main`. To release a new version, bump the image tag in
 [`action.yml`](./action.yml) as part of your pull request. The
 [`version-check.yml`](./.github/workflows/version-check.yml) workflow will
 block merging if the version has not been incremented.
