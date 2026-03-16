@@ -16,10 +16,23 @@ inputs:
       Newline separated parameters where each line is substituted in args, replacing `{}`.
       That is, `args` MUST contain `{}` if `each` is set.
       Practically, this lets you do `xargs -I {} cosign $args`.
+  registry:
+    description: 'Container registry hostname to authenticate to (e.g., ghcr.io). Required when registry-token is set.'
+    required: false
+    default: 'ghcr.io'
+  registry-username:
+    description: 'Username for registry authentication. Defaults to the GitHub actor.'
+    required: false
+  registry-token:
+    description: 'Token for authenticating to the container registry (e.g., secrets.GITHUB_TOKEN). If set, runs `cosign login` before the main command.'
+    required: false
 
 runs:
   using: docker
-  image: docker://ghcr.io/samhclark/cosign-exec-action:v1.0.9
+  image: docker://ghcr.io/samhclark/cosign-exec-action:v1.0.10
   env:
     INPUT_ARGS: ${{ inputs.args }}
     INPUT_EACH: ${{ inputs.each }}
+    INPUT_REGISTRY: ${{ inputs.registry }}
+    INPUT_REGISTRY_USERNAME: ${{ inputs.registry-username || github.actor }}
+    INPUT_REGISTRY_TOKEN: ${{ inputs.registry-token }}

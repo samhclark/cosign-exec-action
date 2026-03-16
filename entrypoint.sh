@@ -4,6 +4,10 @@
 
 set -e
 
+if [ -n "${INPUT_REGISTRY_TOKEN}" ]; then
+    echo "${INPUT_REGISTRY_TOKEN}" | cosign login "${INPUT_REGISTRY}" --username="${INPUT_REGISTRY_USERNAME}" --password-stdin
+fi
+
 if [ -n "${INPUT_EACH}" ]; then
     printf '%s\n' "${INPUT_EACH}" | while read -r line; do
         interpolated=$(printf '%s' "${INPUT_ARGS}" | sed "s|{}|${line}|g")
