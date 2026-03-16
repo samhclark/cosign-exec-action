@@ -10,7 +10,7 @@ Key files:
 - `action.yml` — Action definition; the image tag here is the source of truth for the version
 - `build-cosign.sh` — Runs inside the container build; pins cosign tag, commit, build date, and per-arch checksums for reproducible builds
 - `Containerfile` — Multi-stage build: compiles cosign from source, copies binary into a slim Debian image
-- `entrypoint.sh` — Action entrypoint; runs cosign with args, optionally iterating over `each` lines
+- `entrypoint.sh` — Action entrypoint; optionally runs `cosign login` when a registry token is provided, then runs cosign with args, optionally iterating over `each` lines
 - `scripts/check-cosign-update.sh` — Detects new cosign releases and updates `build-cosign.sh`, `Containerfile`, `action.yml`, and `README.md`
 
 ## Conventions
@@ -25,7 +25,7 @@ Key files:
 
 - The action version lives in the `image:` line of `action.yml` (e.g., `v1.0.2`)
 - The `version-check.yml` workflow blocks PRs that don't bump the version — **every PR must bump the image tag in `action.yml`** (except dependabot PRs)
-- The `cd.yml` workflow publishes the container image and creates a GitHub release on merge to `main`
+- The `cd.yml` workflow publishes the container image, signs it with cosign (keyless via Sigstore), and creates a GitHub release on merge to `main`
 - Cosign updates bump the patch version; major/minor bumps are manual
 
 ## Reproducible builds
@@ -38,4 +38,5 @@ against checksums from the official release assets.
 ## Testing
 
 Run `podman build -t cosign-exec-action .` to verify the build is reproducible
-(checksums match). CI does the same plus runs the action in simple and each modes.
+(checksums match). CI does the same plus runs the action in simple and each modes,
+verifying the cosign version in the output matches the version pinned in `build-cosign.sh`.
