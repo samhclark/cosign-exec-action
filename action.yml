@@ -19,7 +19,7 @@ inputs:
 
 runs:
   using: docker
-  image: docker://ghcr.io/samhclark/cosign-exec-action:v1.0.8
+  image: docker://ghcr.io/samhclark/cosign-exec-action:v1.0.9
   env:
     INPUT_ARGS: ${{ inputs.args }}
     INPUT_EACH: ${{ inputs.each }}
