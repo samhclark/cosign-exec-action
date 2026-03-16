@@ -46,6 +46,16 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" | \
             podman login ghcr.io -u "${{ github.actor }}" --password-stdin
 
+          # Write credentials to Docker config.json so container actions can authenticate
+          if [ -n "$XDG_RUNTIME_DIR" ]; then
+            podman_auth_file="${XDG_RUNTIME_DIR}/containers/auth.json"
+          else
+            podman_auth_file="/tmp/podman-run-$(id -u)/containers/auth.json"
+          fi
+
+          mkdir -p "${HOME}/.docker"
+          cp "$podman_auth_file" "${HOME}/.docker/config.json"
+
       - name: Build Container Image
         run: |
           podman build -t "ghcr.io/${{ github.repository }}:v${{ steps.version.outputs.version }}" .
