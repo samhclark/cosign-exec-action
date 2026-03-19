@@ -10,6 +10,7 @@ fi
 
 if [ -n "${INPUT_EACH}" ]; then
     printf '%s\n' "${INPUT_EACH}" | while read -r line; do
+        [ -z "$line" ] && continue
         interpolated=$(printf '%s' "${INPUT_ARGS}" | sed "s|{}|${line}|g")
         # shellcheck disable=SC2086
         cosign $interpolated

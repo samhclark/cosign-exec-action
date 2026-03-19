@@ -78,3 +78,16 @@ jobs:
             echo "::error::Expected 2 version lines, got $count"
             exit 1
           fi
+
+      - name: Test - Each Mode Trailing Newline
+        run: |
+          output=$(podman run --rm \
+            --env INPUT_ARGS="{}" \
+            --env "INPUT_EACH=$(printf 'version --json\n')" \
+            cosign-exec-action:test)
+          echo "$output"
+          count=$(echo "$output" | grep -c "\"gitVersion\": \"v${{ steps.expected.outputs.version }}\"")
+          if [ "$count" -ne 1 ]; then
+            echo "::error::Expected 1 version line, got $count (trailing newline bug)"
+            exit 1
+          fi
