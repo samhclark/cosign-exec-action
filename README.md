@@ -16,7 +16,7 @@ rather than built on every action run.
 | `args` | yes | `version` | Arguments passed to `cosign` |
 | `each` | no | — | Newline-separated list of values. Each line is substituted for `{}` in `args` and `cosign` is called once per line. `args` must contain `{}` when `each` is set. |
 | `registry` | no | `ghcr.io` | Container registry hostname to authenticate to. Required when `registry-token` is set. |
-| `registry-username` | no | `github.repository_owner` | Username for registry authentication. |
+| `registry-username` | no | `GITHUB_REPOSITORY_OWNER` | Username for registry authentication. Defaults to the repository owner via the `GITHUB_REPOSITORY_OWNER` environment variable provided by GitHub Actions. |
 | `registry-token` | no | — | Token for authenticating to the container registry. If set, runs `cosign login` before the main command. |
 
 ## Usage

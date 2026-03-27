@@ -23,6 +23,48 @@ jobs:
       - name: Run ShellCheck
         run: shellcheck *.sh scripts/*.sh
 
+  validate-action:
+    name: Validate action.yml
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Check runs.env only references inputs context
+        run: |
+          # Extract the runs.env block and check for non-inputs contexts.
+          # Container actions only have access to the inputs context in runs.env.
+          # See: https://docs.github.com/en/actions/sharing-automations/creating-actions/metadata-syntax-for-github-actions#runsenvenvironment-variable
+          in_env=false
+          found=0
+          while IFS= read -r line; do
+            case "$line" in
+              "  env:") in_env=true; continue ;;
+            esac
+            if $in_env; then
+              # Stop at next top-level key (not indented with spaces)
+              if printf '%s' "$line" | grep -qP '^\S'; then
+                break
+              fi
+              # Extract the expression body (between ${{ and }}) and check
+              # for any word.word pattern that isn't inputs.something
+              inner=$(printf '%s' "$line" | grep -oP '\$\{\{\s*\K[^}]+' || true)
+              if [ -n "$inner" ]; then
+                bad=$(printf '%s' "$inner" | grep -oP '\b(?!inputs\.)\w+\.\w+' || true)
+                if [ -n "$bad" ]; then
+                  echo "::error::runs.env references disallowed context '$bad': $line"
+                  echo "Container actions only support the 'inputs' context in runs.env"
+                  found=$((found + 1))
+                fi
+              fi
+            fi
+          done < action.yml
+          if [ "$found" -gt 0 ]; then
+            exit 1
+          fi
+          echo "All runs.env expressions only reference inputs context"
+
   test:
     name: Test Container Image
     runs-on: ubuntu-latest
@@ -89,5 +131,24 @@ jobs:
           count=$(echo "$output" | grep -c "\"gitVersion\": \"v${{ steps.expected.outputs.version }}\"")
           if [ "$count" -ne 1 ]; then
             echo "::error::Expected 1 version line, got $count (trailing newline bug)"
+            exit 1
+          fi
+
+      - name: Test - Registry Username Defaults to GITHUB_REPOSITORY_OWNER
+        run: |
+          # When INPUT_REGISTRY_USERNAME is empty and INPUT_REGISTRY_TOKEN is set,
+          # the entrypoint should default to GITHUB_REPOSITORY_OWNER.
+          # cosign login will fail (fake token), but we can check the error message
+          # includes the expected username.
+          output=$(podman run --rm \
+            --env INPUT_ARGS=version \
+            --env INPUT_REGISTRY=ghcr.io \
+            --env INPUT_REGISTRY_USERNAME= \
+            --env INPUT_REGISTRY_TOKEN=fake-token \
+            --env GITHUB_REPOSITORY_OWNER=test-owner \
+            cosign-exec-action:test 2>&1 || true)
+          echo "$output"
+          if ! echo "$output" | grep -q "test-owner"; then
+            echo "::error::Expected registry login to use GITHUB_REPOSITORY_OWNER (test-owner)"
             exit 1
           fi
