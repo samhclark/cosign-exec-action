@@ -5,6 +5,7 @@
 set -e
 
 if [ -n "${INPUT_REGISTRY_TOKEN}" ]; then
+    INPUT_REGISTRY_USERNAME="${INPUT_REGISTRY_USERNAME:-${GITHUB_REPOSITORY_OWNER}}"
     echo "${INPUT_REGISTRY_TOKEN}" | cosign login "${INPUT_REGISTRY}" --username="${INPUT_REGISTRY_USERNAME}" --password-stdin
 fi
 
