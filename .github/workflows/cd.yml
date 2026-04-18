@@ -42,7 +42,19 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Extracted version: $version"
 
+      - name: Check if already released
+        id: check
+        run: |
+          if git tag -l "v${{ steps.version.outputs.version }}" | grep -q .; then
+            echo "v${{ steps.version.outputs.version }} already exists as a git tag, skipping publish"
+            echo "new_version=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "v${{ steps.version.outputs.version }} is new, proceeding with publish"
+            echo "new_version=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Login to Container Registry
+        if: steps.check.outputs.new_version == 'true'
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | \
             podman login ghcr.io -u "${{ github.actor }}" --password-stdin
@@ -50,10 +62,12 @@ jobs:
             docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
       - name: Build Container Image
+        if: steps.check.outputs.new_version == 'true'
         run: |
           podman build -t "ghcr.io/${{ github.repository }}:v${{ steps.version.outputs.version }}" .
 
       - name: Tag and Push
+        if: steps.check.outputs.new_version == 'true'
         id: push
         run: |
           version="${{ steps.version.outputs.version }}"
@@ -82,12 +96,14 @@ jobs:
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
       - name: Sign Container Image
+        if: steps.check.outputs.new_version == 'true'
         uses: ./
         with:
           args: 'sign ghcr.io/${{ github.repository }}@sha256:${{ steps.push.outputs.digest }} --yes'
           registry-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Attest Container Image
+        if: steps.check.outputs.new_version == 'true'
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4
         with:
           subject-name: ghcr.io/${{ github.repository }}
@@ -96,6 +112,7 @@ jobs:
           create-storage-record: false
 
       - name: Create Release
+        if: steps.check.outputs.new_version == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
