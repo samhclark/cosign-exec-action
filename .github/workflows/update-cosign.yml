@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Check for cosign update
         env:
@@ -37,6 +39,12 @@ jobs:
         with:
           app-id: ${{ secrets.COSIGN_UPDATER_APP_ID }}
           private-key: ${{ secrets.COSIGN_UPDATER_PRIVATE_KEY }}
+
+      - name: Configure git credentials
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: gh auth setup-git
 
       - name: Create or update PR
         if: steps.changes.outputs.changed == 'true'
