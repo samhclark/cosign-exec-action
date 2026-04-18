@@ -54,6 +54,7 @@ jobs:
           new_tag=$(grep '^tag=' build-cosign.sh | cut -d'"' -f2)
           branch="update-cosign-${new_tag}"
 
+          git fetch origin "$branch" 2>/dev/null || true
           git checkout -b "$branch"
           git add build-cosign.sh action.yml Containerfile README.md
           git -c user.name="github-actions[bot]" \
