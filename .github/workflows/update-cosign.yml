@@ -30,7 +30,7 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Create PR
+      - name: Create or update PR
         if: steps.changes.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -43,15 +43,19 @@ jobs:
           git -c user.name="github-actions[bot]" \
               -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
               commit -m "Bump cosign to ${new_tag}"
-          git push -u origin "$branch"
+          git push --force-with-lease -u origin "$branch"
 
-          gh pr create \
-            --title "Bump cosign to ${new_tag}" \
-            --body "$(cat <<EOF
+          if gh pr list --head "$branch" --json number --jq '.[0].number' | grep -q .; then
+            echo "PR already exists for ${branch}, branch has been updated"
+          else
+            gh pr create \
+              --title "Bump cosign to ${new_tag}" \
+              --body "$(cat <<EOF
           Automated update to cosign ${new_tag}.
 
           Release: https://github.com/sigstore/cosign/releases/tag/${new_tag}
 
           Please verify with \`podman build .\` before merging.
           EOF
-          )"
+              )"
+          fi
