@@ -47,8 +47,8 @@ jobs:
               if printf '%s' "$line" | grep -qP '^\S'; then
                 break
               fi
-              # Extract the expression body (between ${{ and }}) and check
-              # for any word.word pattern that isn't inputs.something
+              # Extract the expression body and check for any
+              # word.word pattern that isn't inputs.something
               inner=$(printf '%s' "$line" | grep -oP '\$\{\{\s*\K[^}]+' || true)
               if [ -n "$inner" ]; then
                 bad=$(printf '%s' "$inner" | grep -oP '\b(?!inputs\.)\w+\.\w+' || true)
@@ -138,17 +138,21 @@ jobs:
         run: |
           # When INPUT_REGISTRY_USERNAME is empty and INPUT_REGISTRY_TOKEN is set,
           # the entrypoint should default to GITHUB_REPOSITORY_OWNER.
-          # cosign login will fail (fake token), but we can check the error message
-          # includes the expected username.
-          output=$(podman run --rm \
+          # cosign login stores credentials without validating, so check the
+          # docker config for the base64-encoded username.
+          auth=$(podman run --rm \
             --env INPUT_ARGS=version \
             --env INPUT_REGISTRY=ghcr.io \
             --env INPUT_REGISTRY_USERNAME= \
             --env INPUT_REGISTRY_TOKEN=fake-token \
             --env GITHUB_REPOSITORY_OWNER=test-owner \
-            cosign-exec-action:test 2>&1 || true)
-          echo "$output"
-          if ! echo "$output" | grep -q "test-owner"; then
+            --entrypoint sh \
+            cosign-exec-action:test -c '
+              /entrypoint.sh >/dev/null 2>&1
+              sed -n "s/.*\"auth\": *\"\([^\"]*\)\".*/\1/p" /root/.docker/config.json | base64 -d
+            ')
+          echo "Stored auth: $auth"
+          if ! echo "$auth" | grep -q "^test-owner:"; then
             echo "::error::Expected registry login to use GITHUB_REPOSITORY_OWNER (test-owner)"
             exit 1
           fi
