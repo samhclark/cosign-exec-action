@@ -1,4 +1,4 @@
-FROM docker.io/library/golang:1.26.3@sha256:2d6c80227255c3112a4d08e67ba98e58efd3846daf15d9d7d4c389565d881b1a as builder
+FROM docker.io/library/golang:1.26.5@sha256:705e964a93a2fd2e75c7d59bb7d781b57e30f12293ffde5175c69229e18fb678 as builder
 
 COPY ./build-cosign.sh /build-cosign.sh
 RUN /build-cosign.sh

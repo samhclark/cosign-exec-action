@@ -2,12 +2,12 @@
 
 set -eu
 
-tag="v3.1.1"
-commit="7914231b348c4057891edeb321772aad3ed04fce"
-build_date="2026-06-09T12:10:44Z"
+tag="v3.1.3"
+commit="11926fa5bbbbde47e88fc006b625a17769b743b2"
+build_date="2026-08-05T23:43:27Z"
 
-amd64_checksum="ae1ecd212663f3693ad9edf8b1a183900c9a52d3155ba6e354237f9a0f6463fc"
-arm64_checksum="2ec865872e331c32fd12b08dae15332d3f92c0aa029219589684a4903ca85d11"
+amd64_checksum="4629c757b7618056f8ddd7e2625ae9fdd94c0372a65049520bc7d9df9efc7f71"
+arm64_checksum="c5d324e091826b0d7a78eb16fef316450b4eb9aaec045611c08ba06f5e73220a"
 
 declare -A binary_checksums
 binary_checksums['amd64']="$amd64_checksum"
