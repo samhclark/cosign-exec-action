@@ -1,9 +1,9 @@
-FROM docker.io/library/golang:1.26.5@sha256:705e964a93a2fd2e75c7d59bb7d781b57e30f12293ffde5175c69229e18fb678 as builder
+FROM docker.io/library/golang:1.26.4@sha256:f96cc555eb8db430159a3aa6797cd5bae561945b7b0fe7d0e284c63a3b291609 as builder
 
 COPY ./build-cosign.sh /build-cosign.sh
 RUN /build-cosign.sh
 
-FROM docker.io/library/debian:trixie-20260223-slim@sha256:1d3c811171a08a5adaa4a163fbafd96b61b87aa871bbc7aa15431ac275d3d430
+FROM docker.io/library/debian:trixie-20260803-slim@sha256:3a39a0592364683e6bab97937b72cad5a8fa6dcbbee90edb3bb48c7f8e94f258
 LABEL com.github.actions.name="cosign-exec-action" \
     com.github.actions.description="A simple wrapper around the cosign executable for use as a step in GitHub Actions" \
     com.github.actions.icon="lock" \
